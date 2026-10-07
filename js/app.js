@@ -1,0 +1,44 @@
+const $=s=>document.querySelector(s),app=$('#app'),D={};
+let P=JSON.parse(localStorage.getItem('prog')||'{}'),T=localStorage.getItem('teacher')==='1';
+const sv=(p,x='')=>`<svg class="s" viewBox="0 0 ${x||20} 34" fill="none" stroke="currentColor" stroke-width="2">${p}</svg>`;
+const SY={n:sv('<ellipse cx="8" cy="27" rx="6.5" ry="4.5" fill="currentColor"/><path d="M14 27V3"/>'),
+p:sv('<ellipse cx="8" cy="27" rx="6" ry="4" fill="currentColor"/><ellipse cx="30" cy="27" rx="6" ry="4" fill="currentColor"/><path d="M14 27V4H36V27" /><path d="M14 5H36" stroke-width="5"/>','44'),
+r:sv('<path d="M6 3l9 9-8 8 8 8c-6-2-8 3-5 6"/>')};
+const save=()=>localStorage.setItem('prog',JSON.stringify(P));
+const load=async g=>D[g]||(D[g]=await(await fetch(`data/${g}.json`)).json());
+const rnd=a=>a[Math.floor(Math.random()*a.length)],shuf=a=>[...a].sort(()=>Math.random()-.5);
+let AC;const beep=(f,t=0,d=.25)=>{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;o.connect(g);g.connect(AC.destination);const s=AC.currentTime+t;g.gain.setValueAtTime(.3,s);g.gain.exponentialRampToValueAtTime(.001,s+d);o.start(s);o.stop(s+d)};
+const NM=['مي','فا','صول','لا','سي','دو','ري','مي','فا'];
+const staff=i=>{let y=50-i*5,ls=[0,1,2,3,4].map(k=>`<line x1="40" x2="150" y1="${30+k*5*2}" y2="${30+k*5*2}" stroke="currentColor"/>`).join('');
+ ls=[0,1,2,3,4].map(k=>`<line x1="10" x2="150" y1="${70-k*10}" y2="${70-k*10}" stroke="currentColor"/>`).join('');y=70-i*5;
+ return `<svg viewBox="0 0 160 100" style="width:240px;color:var(--c)">${ls}<text x="12" y="82" font-size="56" fill="currentColor" font-family="'Noto Music','Segoe UI Symbol',serif">𝄞</text><ellipse cx="100" cy="${y}" rx="7" ry="5" fill="currentColor"/></svg>`};
+const EX={
+'1-2':()=>{let s=Array.from({length:6},()=>rnd('nnr')).join(''),a=[...s].filter(c=>c=='n').length;return{q:'كم نوار (♩) في هذا الإيقاع؟',v:[...s].map(c=>SY[c]).join(''),o:[0,1,2,3,4,5,6].map(String),a:String(a)}},
+'1-3':()=>{if(Math.random()<.5){const h=Math.random()<.5;return{q:'اضغط واستمع: الصوت حاد أم غليظ؟',pl:()=>beep(h?880:196,0,.8),o:['حاد','غليظ'],a:h?'حاد':'غليظ'}}const f=Math.random()<.5;return{q:'اضغط واستمع: اللحن سريع أم بطيء؟',pl:()=>[0,1,2,3,4,5].forEach(i=>beep(440,i*(f?.18:.6),.1)),o:['سريع','بطيء'],a:f?'سريع':'بطيء'}},
+'2-2':null,'2-3':()=>{const i=rnd([0,1,2,3,4,5,6,7,8]),w=shuf(NM.filter(x=>x!=NM[i]).filter((x,j,A)=>A.indexOf(x)==j)).slice(0,3);return{q:'ما اسم هذه النغمة؟',v:staff(i),o:shuf([NM[i],...w]),a:NM[i]}},
+'3-2':()=>({q:'كم كروشًا (♪) يساوي زمنه زمن نوار واحد؟',o:['1','2','3','4'],a:'2'})};
+EX['2-2']=EX['2-3'];
+function quiz(id){const g=EX[id];if(!g)return'';let h=`<div class="card"><span class="tag">نشاط تفاعلي إضافي</span> (ليس من الدليل الرسمي)<div id="qz"></div></div>`;setTimeout(()=>nq(g),0);return h}
+function nq(g){const q=g(),z=$('#qz');z.innerHTML=`<h3>🎯 ${q.q}</h3>${q.pl?'<button id="pl">🎧 استمع</button>':''}<div>${q.v||''}</div><div class="opts">${q.o.map(o=>`<button data-o="${o}">${o}</button>`).join('')}</div><p id="fb"></p>`;
+ if(q.pl)$('#pl').onclick=q.pl;z.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{if(b.dataset.o==q.a){b.className='ok';$('#fb').innerHTML='✅ أحسنت! <button id="nx">سؤال جديد</button>';$('#nx').onclick=()=>nq(g)}else{b.className='no';$('#fb').textContent='❌ حاول مرة أخرى'}})}
+const prog=(g,u)=>{const l=u.lessons;return Math.round(100*l.filter(x=>P[x.id]).length/l.length)};
+function rhythm(){let st=['n','n','p','r','n','n','p','r'],bpm=90,run=0;const dr=()=>{$('#lb').innerHTML=`<div class="card"><span class="tag">صانع الإيقاع</span> اضغط على الخانة لتغيير: نوار ♩ ← كروشان ♫ ← سكتة. ثم شغّل.<div id="cs">${st.map((c,i)=>`<button class="cell" data-i="${i}">${SY[c]}</button>`).join('')}</div><p>السرعة: <input type="range" id="bp" min="50" max="140" value="${bpm}"> <b>${bpm}</b></p><button id="go">▶ تشغيل</button></div>`;
+ document.querySelectorAll('.cell').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;st[i]={n:'p',p:'r',r:'n'}[st[i]];dr()});$('#bp').onchange=e=>{bpm=+e.target.value;dr()};
+ $('#go').onclick=()=>{const d=60/bpm;st.forEach((c,i)=>{if(c=='n')beep(523,i*d);if(c=='p'){beep(523,i*d,.1);beep(523,i*d+d/2,.1)}setTimeout(()=>document.querySelectorAll('.cell')[i]?.classList.add('on'),i*d*1000);setTimeout(()=>document.querySelectorAll('.cell')[i]?.classList.remove('on'),(i+1)*d*1000)})}};dr()}
+async function route(){const h=location.hash.slice(2).split('/'),m=h[0];$('#tm').textContent=T?'👩‍🏫 وضع المعلم: يعمل':'👩‍🏫 وضع المعلم';
+ if(!m)return app.innerHTML=`<section class="hero"><div><span class="tag">🇴🇲 وفق دليل المعلم الرسمي – سلطنة عُمان</span><h1>أهلاً بك يا صديقي الموسيقي الصغير!</h1><p>تعلّم، والعب، واعزف! اختر صفك الدراسي لتبدأ رحلتك مع النغمات والإيقاعات. لا تحتاج إلى أي تسجيل 🎉</p><a class="btn" href="#grades" onclick="document.getElementById('grades').scrollIntoView({behavior:'smooth'});return false">ابدأ الآن 🚀</a> <a class="btn alt" href="#/lab">جرّب المختبر 🎹</a></div><div class="notes" aria-hidden="true"><b>♪</b><b>♫</b><b>♩</b><b>♬</b><b>𝄞</b><img src="img/mascot.jpg" alt="" onerror="this.remove()"></div></section><h2 id="grades">في أي صف أنت؟ 🤔</h2><p>اضغط على بطاقة صفك للدخول إلى الدروس</p><div class="grid"><a class="big" style="background:linear-gradient(135deg,#ff9f43,#ee5a6f)" href="#/g1"><span>🥁</span>الصف الأول<small>📚 4 وحدات · 12 درسًا</small><i>ادخل ←</i></a><a class="big" style="background:linear-gradient(135deg,#7b4bd6,#4aa8ff)" href="#/g4"><span>🎼</span>الصف الرابع<small>⏳ قريبًا</small><i>ادخل ←</i></a></div><a class="card labcard" href="#/lab"><span class="tag">🧪 جديد</span><h2>المختبر الموسيقي</h2>صانع إيقاع: نوار وكروشان وسكتة — جرّب وشغّل!</a><div class="grid feat"><div class="card"><h3>🎯 تعلّم</h3>أهداف كل درس بلغة بسيطة.</div><div class="card"><h3>🃏 أجب</h3>تمارين تفاعلية بنتيجة فورية.</div><div class="card"><h3>🎮 جرّب</h3>مختبر وألعاب إيقاعية.</div></div><footer>🎶 نغماتي — منصة مفتوحة لطلاب الفنون الموسيقية في سلطنة عُمان، بدون تسجيل دخول.</footer>`;
+ if(m=='lab')return lab();
+ const g=await load(m);if(g.pending)return app.innerHTML=`<p class="crumb"><a href="#/">الرئيسية</a></p><h1>${g.grade}</h1><div class="card">⏳ لم يتم تحليل دليل الصف الرابع بعد، لذلك لا يوجد محتوى هنا. (لن يُؤلَّف أي محتوى من خارج الدليل.)</div>`;
+ if(h[1]=='l'){const all=g.units.flatMap(u=>u.lessons.map(l=>({...l,u}))),i=all.findIndex(l=>l.id==h[2]),l=all[i],pv=all[i-1],nx=all[i+1];
+  return app.innerHTML=`<p class="crumb"><a href="#/">الرئيسية</a> › <a href="#/${m}">${g.grade}</a> › <a href="#/${m}/u/${l.u.id}">${l.u.title}</a></p><h1>${l.title}</h1><p>الدرس ${i+1} من ${all.length}</p>
+  <div class="card"><h2>🎯 هتتعلم إيه؟</h2><ul>${l.objectives.map(o=>`<li>${o}</li>`).join('')}</ul></div>${quiz(l.id)}${l.lab?'<a class="btn" href="#/lab">🔬 جرّب في المختبر</a>':''}
+  ${T?`<div class="card teacher"><h3>👩‍🏫 للمعلم</h3><p>المصدر: دليل المعلم ص${l.page} · عدد الحصص: ${l.sessions}</p><b>الأنشطة (من الدليل):</b><ul>${l.activities.map(a=>`<li>${a}</li>`).join('')}</ul><p>📱 رموز QR في الدليل: ${l.qrPages.length?'ص'+l.qrPages.join('، ص')+' — الرابط لم يُستخرج، راجع الدليل':'لا يوجد'}</p></div>`:''}
+  <p><button id="dn">${P[l.id]?'✅ تم الإنجاز':'✔ أنهيت الدرس'}</button></p><div class="nav">${nx?`<a class="btn" href="#/${m}/l/${nx.id}">الدرس التالي ←</a>`:'<span></span>'}${pv?`<a class="btn" href="#/${m}/l/${pv.id}">→ الدرس السابق</a>`:''}</div>`,
+  $('#dn').onclick=()=>{P[l.id]=1;save();route()}}
+ if(h[1]=='u'){const u=g.units.find(x=>x.id==h[2]);return app.innerHTML=`<p class="crumb"><a href="#/${m}">${g.grade}</a></p><h1>${u.title}</h1><div class="grid">${u.lessons.map(l=>`<a class="card" href="#/${m}/l/${l.id}" style="text-decoration:none;color:inherit">${P[l.id]?'<span class="done">✅</span> ':''}${l.title}</a>`).join('')}</div>`}
+ app.innerHTML=`<p class="crumb"><a href="#/">الرئيسية</a></p><h1>${g.grade}</h1>${g.units.map(u=>`<a class="card" href="#/${m}/u/${u.id}" style="display:block;text-decoration:none;color:inherit"><h2>${u.title} <span class="tag">${u.semester}</span></h2><div class="bar"><i style="width:${prog(g,u)}%"></i></div>${prog(g,u)}% — ${u.lessons.length} دروس</a>`).join('')}`}
+$('#tm').onclick=()=>{T=!T;localStorage.setItem('teacher',T?'1':'0');route()};
+addEventListener('hashchange',route);route();
+
+let LT='piano';
+function lab(){app.innerHTML=`<p class="crumb"><a href="#/">الرئيسية</a></p><h1>🔬 المختبر الموسيقي</h1><p><span class="tag">تجارب إضافية — ليست من الدليل</span></p><div class="opts">${[['piano','🎹 بيانو'],['xylo','🌈 إكسيليفون'],['drums','🪘 طبول'],['rhy','🥁 صانع إيقاع']].map(([k,t])=>`<button data-t="${k}" class="${k==LT?'ok':''}">${t}</button>`).join('')}</div><div id="lb"></div>`;document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{LT=b.dataset.t;lab()});({piano,xylo,drums,rhy:rhythm})[LT]()}
